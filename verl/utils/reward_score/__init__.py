@@ -83,6 +83,11 @@ def default_compute_score(data_source, solution_str, ground_truth, extra_info=No
         from . import search_r1_like_qa_em
 
         res = search_r1_like_qa_em.compute_score(solution_str, ground_truth)
+
+    elif data_source in ["Node-Selection-V5_DAPO-v1"]:
+        from . import node_selection
+        res = node_selection.compute_score(solution_str, ground_truth)
+
     else:
         raise NotImplementedError(f"Reward function is not implemented for {data_source=}")
 
