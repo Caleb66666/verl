@@ -176,13 +176,13 @@ class ActorRolloutRefWorker(Worker):
         role="actor",
         enable_activation_offload=False,
     ):
+        # from rich import print
         from torch import optim
         from torch.distributed.fsdp import CPUOffload, MixedPrecision
-        from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForVision2Seq
+        from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForImageTextToText
 
         from verl.utils.model import get_generation_config, print_model_size, update_model_config
         from verl.utils.torch_dtypes import PrecisionType
-
         assert role in ["actor", "ref"]
 
         log_gpu_memory_usage(f"Before init {role} from HF AutoModel", logger=logger)
@@ -192,6 +192,8 @@ class ActorRolloutRefWorker(Worker):
         # TODO(zhangchi.usc1992): 1. support create from random initialized model. 2. Support init with FSDP directly
         self.tokenizer = hf_tokenizer(local_path, trust_remote_code=trust_remote_code)
         self.processor = hf_processor(local_path, trust_remote_code=trust_remote_code)
+        # if self.processor is not None and self.processor.__class__.__name__ in {"Gemma3Processor"}:
+        #     self.processor = None
 
         torch_dtype = fsdp_config.get("model_dtype", None)
         if torch_dtype is None:
@@ -200,7 +202,11 @@ class ActorRolloutRefWorker(Worker):
             torch_dtype = PrecisionType.to_dtype(torch_dtype)
 
         # override model kwargs
-        actor_model_config = AutoConfig.from_pretrained(local_path, trust_remote_code=trust_remote_code, attn_implementation="flash_attention_2")
+        if self.processor is not None and self.processor.__class__.__name__ in {"Gemma3Processor"}:
+            actor_model_config = AutoConfig.from_pretrained(local_path, trust_remote_code=trust_remote_code, attn_implementation="eager")
+        else:
+            actor_model_config = AutoConfig.from_pretrained(local_path, trust_remote_code=trust_remote_code, attn_implementation="flash_attention_2")
+
 
         # patch for kimi-vl
         if getattr(actor_model_config, "model_type", None) == "kimi_vl":
@@ -223,11 +229,17 @@ class ActorRolloutRefWorker(Worker):
 
         with init_context(), warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            if type(actor_model_config) in AutoModelForVision2Seq._model_mapping.keys():
-                actor_module_class = AutoModelForVision2Seq
+            if type(actor_model_config) in AutoModelForImageTextToText._model_mapping.keys():
+                actor_module_class = AutoModelForImageTextToText
+                if getattr(actor_model_config, "model_type", None) == "gemma3":
+                    from transformers import Gemma3ForConditionalGeneration
+                    actor_module_class = Gemma3ForConditionalGeneration
             else:
                 actor_module_class = AutoModelForCausalLM
-
+            # print(actor_model_config)
+            # print(actor_module_class)
+            # print(torch_dtype)
+            # return
             actor_module = actor_module_class.from_pretrained(
                 pretrained_model_name_or_path=local_path,
                 torch_dtype=torch_dtype,

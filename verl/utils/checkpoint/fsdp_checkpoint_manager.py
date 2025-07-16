@@ -225,9 +225,13 @@ class FSDPCheckpointManager(BaseCheckpointManager):
 
                     auto_model_cls = AutoModelForCausalLM
                 elif "ForConditionalGeneration" in model_config.architectures[0]:
-                    from transformers import AutoModelForVision2Seq
+                    # from transformers import AutoModelForVision2Seq
 
-                    auto_model_cls = AutoModelForVision2Seq
+                    # auto_model_cls = AutoModelForVision2Seq
+
+                    from transformers import AutoModelForImageTextToText
+
+                    auto_model_cls = AutoModelForImageTextToText
                 else:
                     raise NotImplementedError(f"Unknown architecture {model_config['architectures']}")
 
@@ -241,6 +245,7 @@ class FSDPCheckpointManager(BaseCheckpointManager):
                     else:
                         print(f"Warning: {self.__class__.__name__}.save_checkpoint: Generation config file not found in, using a generation config created from the model config when saving hf_model.")
 
+                # print(save_model.config)
                 save_model.save_pretrained(hf_local_path, state_dict=state_dict)
                 self.processing_class.save_pretrained(hf_local_path)
                 del state_dict
