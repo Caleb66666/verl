@@ -95,7 +95,8 @@ class RLHFDataset(Dataset):
         self.data_files = copy.deepcopy(data_files)
         self.original_data_files = copy.deepcopy(data_files)  # use for resume
         self.tokenizer = tokenizer
-        self.processor = processor
+        # self.processor = processor
+        self.processor = None
         self.config = config
 
         self.cache_dir = os.path.expanduser(config.get("cache_dir", "~/.cache/verl/rlhf"))

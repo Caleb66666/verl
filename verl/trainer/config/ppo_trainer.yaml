@@ -150,7 +150,8 @@ actor_rollout_ref:
   actor:
 
     # fsdp, fsdp2 or megatron. fsdp backend used here.
-    strategy: fsdp
+    # strategy: fsdp
+    strategy: fsdp2
 
     # Split each sample into sub-batches of this size for PPO
     ppo_mini_batch_size: 256
