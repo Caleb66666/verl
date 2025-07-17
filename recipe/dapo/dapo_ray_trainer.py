@@ -212,17 +212,18 @@ class RayDAPOTrainer(RayPPOTrainer):
                             print(f"{num_prompt_in_batch=} < {prompt_bsz=}")
                             max_num_gen_batches = self.config.algorithm.filter_groups.max_num_gen_batches
                             if max_num_gen_batches <= 0 or num_gen_batches < max_num_gen_batches:
-                                ## 防止模型为了补齐内容而continue，从而保证整成的validate和save checkpoint
-                                if self.val_reward_fn is not None and self.config.trainer.test_freq > 0 and (is_last_step or self.global_steps % self.config.trainer.test_freq == 0):
-                                    with marked_timer("testing", timing_raw, "green"):
-                                        val_metrics: dict = self._validate()
-                                        if is_last_step:
-                                            last_val_metrics = val_metrics
-                                    metrics.update(val_metrics)
+                                # ## 防止模型为了补齐内容而continue，从而保证整成的validate和save checkpoint
+                                # if self.val_reward_fn is not None and self.config.trainer.test_freq > 0 and (is_last_step or self.global_steps % self.config.trainer.test_freq == 0):
+                                #     with marked_timer("testing", timing_raw, "green"):
+                                #         val_metrics: dict = self._validate()
+                                #         if is_last_step:
+                                #             last_val_metrics = val_metrics
+                                #     metrics.update(val_metrics)
 
-                                if self.config.trainer.save_freq > 0 and (is_last_step or self.global_steps % self.config.trainer.save_freq == 0):
-                                    with marked_timer("save_checkpoint", timing_raw, "green"):
-                                        self._save_checkpoint()
+                                # if self.config.trainer.save_freq > 0 and (is_last_step or self.global_steps % self.config.trainer.save_freq == 0):
+                                #     with marked_timer("save_checkpoint", timing_raw, "green"):
+                                #         self._save_checkpoint()
+                                # 新的备注：目前控制这个的是global_steps，这个和当前的batch_steps是不一致的，比如每个批次都要2次才能填满一次训练，可能就出现log/val/save频次比真实设置值除以2
 
                                 print(f"{num_gen_batches=}. Keep generating...")
                                 progress_bar.update(1)
